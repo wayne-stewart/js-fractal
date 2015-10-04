@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Fractal</title>
+	
+	<link href="css/colpick.css" rel="stylesheet"></link>
+	<link href="css/style.css" rel="stylesheet"></link>
+	
+	<script data-main="js/app.js" src="js/require.js"></script>
+</head>
+<body>
+	<canvas id="fractalCanvas"></canvas>
+	<div id="mainmenu" class="hidden">
+		<ul id="fractalTypeMenu">
+			<li><a data-fractal-type="julia">Julia</a></li>
+			<li><a data-fractal-type="mandelbrot">Mandelbrot</a></li>
+			<li><a data-fractal-type="glynn">Glynn</a></li>
+		</ul>
+		|
+		<ul>
+			<li><a id="fractalRender">Render</a></li>
+		</ul>
+		|
+		<ul id="fractalTypeSettings">
+			<li>iterations: <input type="number" id="iterations" value="256" step="64" /></li>
+			<li id="li_julia">
+				constant: <input type="text" id="constant" value="0.0 + 0.67i" />
+			<li id="li_mandelbrot">
+				constant: <input type="text" id="constant" value="0.0 + 0.0i" />
+			<li id="li_glynn">
+				constant: <input type="text" id="constant" value="-0.2 + 0.0i" />
+				factor: <input type="number" id="factor" value="1.5" step="0.01" /></li>
+			<li class="hidden">
+				width: <input type="number" id="width" /> 
+				height: <input type="number" id="height" /></li>
+		</ul>
+		<ul>
+			<li></li>
+		</ul>
+	</div>
+</body>
+</html>
