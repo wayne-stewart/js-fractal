@@ -66,10 +66,10 @@ define(["jquery"], function($){
 			canvas = jqCanvas[0];
 			
 			if (width) canvas.width = width;
-			else canvas.width = document.body.offsetWidth;
+			else canvas.width = window.innerWidth;
 			
 			if (height) canvas.height = height;
-			else canvas.height = document.body.scrollHeight;
+			else canvas.height = window.innerHeight;
 
 			ctx = canvas.getContext("2d");
 			
