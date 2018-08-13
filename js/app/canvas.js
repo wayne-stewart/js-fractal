@@ -9,6 +9,7 @@ define(["jquery"], function($){
 		var mouseDown;
 		var mouseDownPoint;
 		var selectionBox;
+		var canvasToGraph;
 		
 		var jqCanvas = $("#fractalCanvas");
 		
@@ -92,10 +93,19 @@ define(["jquery"], function($){
 		});
 		
 		jqCanvas.on("mousemove", function(e) {
+			if (!canvasToGraph) return;
+			var p2 = canvasToGraph.transform(e.clientX, e.clientY);
 			if (mouseDown) { 
-				selectionBox = createSelectionBox(mouseDownPoint, { x: e.clientX, y: e.clientY });
+			var p1 = canvasToGraph.transform(mouseDownPoint.x, mouseDownPoint.y);
+			var x = Math.min(p1.x, p2.x);
+			var y = Math.max(p1.y, p2.y);
+			selectionBox = createSelectionBox(mouseDownPoint, { x: e.clientX, y: e.clientY });
 				drawScreen();
+				var rect = {x:x,y:y,w:Math.abs(p2.x-p1.x),h:Math.abs(p2.y-p1.y)};
+				eventBus.send("set:menu:dimension",rect);
 			}
+			var pos = {canvasX: e.clientX, canvasY: e.clientY, graphX: p2.x, graphY: p2.y};
+			eventBus.send("set:menu:mouseposition", pos);
 		});
 		
 		eventBus.listen("get:canvas:size", function() { 
@@ -112,6 +122,10 @@ define(["jquery"], function($){
 		
 		eventBus.listen("canvas:draw", function() { 
 			drawScreen();
+		});
+
+		eventBus.listen("set:canvas:graphTransform", function(transformer){
+			canvasToGraph = transformer;
 		});
 		
 		// init during constructor call

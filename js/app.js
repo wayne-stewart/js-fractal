@@ -17,14 +17,14 @@ requirejs(["jquery", "app/menu", "app/eventbus", "app/fractal", "app/canvas"], f
 	
 	$(function() {
 		
-		var eventBus = new EventBus();
+		window.app = {};
+
+		window.app.eventBus = new EventBus();
 		
-		var menu = new Menu(eventBus);
+		window.app.menu = new Menu(app.eventBus);
 		
-		var fractal = new Fractal(eventBus);
+		window.app.fractal = new Fractal(app.eventBus);
 		
-		var canvas = new Canvas(eventBus);
-		
-		menu.init("julia");
+		window.app.canvas = new Canvas(app.eventBus);
 	});
 });

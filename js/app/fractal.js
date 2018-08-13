@@ -1,87 +1,81 @@
 
 
-define(["app/complex", "app/fractal_julia", "app/fractal_mandelbrot", "app/fractal_glynn"], function(Complex) { 
+define(["app/complex", "app/Color", "app/fractal_julia", "app/fractal_mandelbrot", "app/fractal_glynn"], function(Complex, Color) { 
 	
 	var Fractal = function(eventBus) { 
-		
-		var settings = null;
-		var fractalImpl = null;
-		var canvasRect = null;
-		var graphRect = null;
-		var canvasToGraph = null;
-		
-		var ScreenToCartesianTransform = function(screenRect, transformer){
+			
+		var RotateTransform = function(angle) { 
+			this.transform = function(x, y) { 
+				if (angle == 0) {
+					return {x:x, y:y};
+				}
+				else {
+					var p = { 
+						x: x * Math.cos(angle) - y * Math.sin(angle), 
+						y: y * Math.cos(angle) + x * Math.sin(angle)
+					};
+					return p;
+				}
+			};
+		};
+
+		var MapCanvasToGraph = function(screenRect, graphRect) {
 			this.transform = function(x, y) {
-				var p = { 
-					x: x - screenRect.w / 2,
-					y: -(y - screenRect.h / 2)
-				};
-				return transformer ? transformer.transform(p.x, p.y) : p;
-			};
-		};
-		
-		var ScaleTransform = function (scale, transformer) { 
-			this.transform = function(x, y) { 
 				var p = {
-					x: x * scale,
-					y: y * scale
+					x: graphRect.x + graphRect.w*(x/screenRect.w),
+					y: graphRect.y - graphRect.h*(y/screenRect.h)
 				};
-				return transformer ? transformer.transform(p.x, p.y) : p;
+				return p;
+			};
+		};
+
+		var createGraphRect = function(renderParameters, canvasRect) {
+			var graphAspectRatio = renderParameters.rect_h / renderParameters.rect_w;
+			var canvasAspectRatio = canvasRect.h / canvasRect.w;
+			var x,y,w,h;
+			// aspect ratios are exactly the same so the parameters can be used directly
+			if (graphAspectRatio == canvasAspectRatio) {
+				x = renderParameters.rect_x;
+				y = renderParameters.rect_y;
+				w = renderParameters.rect_w;
+				h = renderParameters.rect_h;
+			}
+
+			// here we are extending the width beyond what the initial parameters specify
+			else if (graphAspectRatio > canvasAspectRatio) {
+				y = renderParameters.rect_y;
+				h = renderParameters.rect_h;
+				w = h / canvasAspectRatio;
+				x = renderParameters.rect_x + (renderParameters.rect_w / 2) - (w / 2);
+			}
+
+			// here we are extending the height beyond what the initial parameters specify
+			else {
+				x = renderParameters.rect_x;
+				w = renderParameters.rect_w;
+				h = w * canvasAspectRatio;
+				y = renderParameters.rect_y - (renderParameters.rect_h / 2) + (h / 2);
+			}
+			var graphRect = { x:x, y:y, w:w, h:h };
+			return graphRect;
+		};
+		
+		var initGraph = function(renderParameters, canvasRect) { 
+			var graphRect = createGraphRect(renderParameters, canvasRect);
+			var t_canvasToGraph = new MapCanvasToGraph(canvasRect, graphRect);
+			var t_rotate = new RotateTransform(renderParameters.rotate);
+			eventBus.send("set:canvas:graphTransform", t_canvasToGraph);
+			return {
+				transform:function(x, y) {
+					var p = t_canvasToGraph.transform(x, y);
+					p = t_rotate.transform(p.x, p.y);
+					return p;
+				}
 			};
 		};
 		
-		var TranslateTransform = function(tx, ty, transformer) { 
-			this.transform = function(x, y) { 
-				var p = { 
-					x: x + tx,
-					y: y + ty
-				};
-				return transformer ? transformer.transform(p.x, p.y) : p;
-			};
-		};
-		
-		var RotateTransform = function(angle, transformer) { 
-			this.transform = function(x, y) { 
-				var p = { 
-					x: x * Math.cos(angle) - y * Math.sin(angle), 
-					y: y * Math.cos(angle) + x * Math.sin(angle)
-				};
-				return transformer ? transformer.transform(p.x, p.y) : p;
-			};
-		};
-		
-		var CanvasToGraphTransform = function(screenRect, graphRect) {
-			
-			//var d = new TranslateTransform(-0.54, 0)
-			//var b = new RotateTransform(Math.PI / 2, d);
-			//var a = new ScaleTransform(graphRect.w / screenRect.w / 6.5, b);
-			//var c = new ScreenToCartesianTransform(screenRect, a);
-			
-			var a = new ScaleTransform(graphRect.w / screenRect.w);
-			var b = new ScreenToCartesianTransform(screenRect, a);
-			
-			this.transform = function(x, y) { 
-				return b.transform(x, y);
-			}; 
-		};
-		
-		var initGraph = function(selectionBox) { 
-			canvasRect = eventBus.send("get:canvas:size");
-			
-			var graphHeight = 2;
-			var graphWidth = graphHeight * canvasRect.w / canvasRect.h;
-			var x = 0 - graphWidth / 2;
-			var y = 0 - graphHeight / 2;
-			graphRect = { x:x, y:y, w:graphWidth, h:graphHeight };
-			
-			canvasToGraph = new CanvasToGraphTransform(canvasRect, graphRect);
-		};
-		
-		var render = function() { 
-			fractalImpl.applySettings(settings);
-			var imgData = eventBus.send("get:canvas:imgData");
-			var max_iterations = settings.getIterations();
-			var colorMap = settings.colorMap(max_iterations);
+		var render = function(renderParameters, fractalImpl, imgData, canvasRect, canvasToGraph, colorMap) { 
+			var max_iterations = renderParameters.iterations;
 
 			for ( var y = 0; y < canvasRect.h; y++ ) {
 				for ( var x = 0; x < canvasRect.w; x++ ) {
@@ -104,25 +98,19 @@ define(["app/complex", "app/fractal_julia", "app/fractal_mandelbrot", "app/fract
 			}
 			
 			eventBus.send("canvas:draw");
-			
 		};
 		
-		eventBus.listen("fractal:selected", function(model) { 
-			settings = model;
-			var FractalImpl = require("app/fractal_" + model.fractalType);
-			fractalImpl = new FractalImpl();
+		eventBus.listen("fractal:render", function(renderParameters) { 
+			var canvasRect = eventBus.send("get:canvas:size");
+			var FractalImpl = require("app/fractal_" + renderParameters.type);
+			fractalImpl = new FractalImpl(renderParameters);
+			var imgData = eventBus.send("get:canvas:imgData");
+			var canvasToGraph = initGraph(renderParameters, canvasRect);
+			var map1 = Color.createLinearGradientList(renderParameters.iterations/2, 0x444499, 0xBBBBBB);
+			var map2 = Color.createLinearGradientList(renderParameters.iterations/2, 0xBBBBBB, 0xFFFFFF);
+			var colorMap = map1.concat(map2);
+			render(renderParameters, fractalImpl, imgData, canvasRect, canvasToGraph, colorMap);
 		});
-		
-		eventBus.listen("fractal:render", function() { 
-			initGraph();
-			render();
-		});
-		
-		eventBus.listen("canvas:selectionCreated", function(selectionBox) { 
-			//initGraph(selectionBox);
-			//render();
-		});
-		
 	};
 	
 	return Fractal;

@@ -1,9 +1,10 @@
 
 define(["app/complex"], function(Complex) { 
 	
-	var FractalImpl = function() { 
+	var FractalImpl = function(renderParameters) { 
 		
-		var constant = new Complex(0, 0);
+		var constant = new Complex(renderParameters.constant_a, 
+									renderParameters.constant_b);
 		
 		var iterate = function(graphPoint, iterations) { 
 			var i = 0;
@@ -20,10 +21,6 @@ define(["app/complex"], function(Complex) {
 		
 		this.iterate = function(z, iterations) { 
 			return iterate(z, iterations);
-		};
-		
-		this.applySettings = function(settings) { 
-			constant = settings.getConstant();
 		};
 	};
 	

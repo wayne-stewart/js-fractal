@@ -23,6 +23,28 @@ define(function() {
 		this.theta = NaN;
 	};
 
+	var toPolarForm = function() {
+		// only convert to polar form if not already in polar form
+		if (isNaN(this.r)) {
+			this.r = this.modulus();
+			this.theta = Math.atan2(this.b, this.a);
+			this.a = NaN;
+			this.b = NaN;
+		}
+		return this;
+	};
+
+	var toGeometricForm = function() {
+		// only convert to geometric form if not already in geometric form
+		if (isNaN(this.a)) {
+			this.a = this.r * Math.cos(this.theta);
+			this.b = this.r * Math.sin(this.theta);
+			this.r = NaN;
+			this.theta = NaN;
+		}
+		return this;
+	};
+
 	Complex.prototype.clone = function() { 
 		var z = new Complex();
 		z.a = this.a;
@@ -33,25 +55,19 @@ define(function() {
 	};
 
 	Complex.prototype.conjugate = function() { 
-		if (isNaN(this.b)) {
-			throw "conjugate function requires geometric form";
-		}
+		toGeometricForm.call(this);
 		this.b = -1 * this.b; 
 		return this; 
 	};
 
 	/* return a scalar value of vector represented by complex coordinates using the pythagorean theorem */
 	Complex.prototype.modulus = function() { 
-		if (isNaN(this.a)) {
-			throw "modulus function requires geometric form";
-		}
+		toGeometricForm.call(this);
 		return Math.sqrt(this.a * this.a + this.b * this.b); 
 	};
 
 	Complex.prototype.multiply = function(z) { 
-		if (isNaN(this.a)) {
-			throw "multiply function requires geometric form";
-		}
+		toGeometricForm.call(this);
 		var a = this.a * z.a - this.b * z.b; 
 		var b = this.a * z.b + this.b * z.a;
 		this.a = a;
@@ -62,9 +78,7 @@ define(function() {
 	Complex.prototype.square = function() { return this.multiply(this);  };
 
 	Complex.prototype.add = function(z) {
-		if (isNaN(this.a)) {
-			throw "add function requires geometric form";
-		}
+		toGeometricForm.call(this);
 		this.a = this.a + z.a; 
 		this.b = this.b + z.b; 
 		return this;
@@ -82,9 +96,7 @@ define(function() {
 		
 		/* is not an integer */
 		else {
-			if (isNaN(this.r)) { 
-				throw "power function requires polar form";
-			}
+			toPolarForm.call(this);
 			this.r = Math.pow(this.r, n);
 			this.theta = this.theta * n;
 		}
@@ -93,35 +105,19 @@ define(function() {
 	};
 
 	Complex.prototype.root = function(n) {
-		if (isNaN(this.r)) {
-			throw "root function requires polar form";
-		}
+		toPolarForm.call(this);
 		this.r = Math.pow(this.r, 1/n);
 		this.theta = this.theta / n;
 		return this;
 	};
 
-	Complex.prototype.toPolarForm = function() {
-		// only convert to polar form if not already in polar form
-		if (isNaN(this.r)) {
-			this.r = this.modulus();
-			this.theta = Math.atan2(this.b, this.a);
-			this.a = NaN;
-			this.b = NaN;
-		}
-		return this;
-	};
+	// Complex.prototype.toPolarForm = function() {
 
-	Complex.prototype.toGeometricForm = function() { 
-		// only convert to geometric form if not already in geometric form
-		if (isNaN(this.a)) {
-			this.a = this.r * Math.cos(this.theta);
-			this.b = this.r * Math.sin(this.theta);
-			this.r = NaN;
-			this.theta = NaN;
-		}
-		return this;
-	};
+	// };
+
+	// Complex.prototype.toGeometricForm = function() { 
+
+	// };
 	
 	return Complex;
 	

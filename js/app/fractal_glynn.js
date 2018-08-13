@@ -1,10 +1,11 @@
 
 define(["app/complex"], function(Complex) { 
 	
-	var FractalGlynn = function() { 
+	var FractalGlynn = function(renderParameters) { 
 		
-		var constant = new Complex(0, 0);
-		var factor = null;
+		var constant = new Complex(renderParameters.constant_a,
+									renderParameters.constant_b);
+		var factor = renderParameters.factor;
 		
 		var iterate = function(graphPoint, iterations) { 
 			var i = 0;
@@ -14,7 +15,7 @@ define(["app/complex"], function(Complex) {
 			for (; i < iterations; i++) {
 				m = z.modulus();
 				if (m > 2) break;
-				z.toPolarForm().power(factor).toGeometricForm().add(c);
+				z.power(factor).add(c);
 			}
 	
 			return iterations == i ? -1 : i;
@@ -22,11 +23,6 @@ define(["app/complex"], function(Complex) {
 		
 		this.iterate = function(z, iterations) { 
 			return iterate(z, iterations);
-		};
-		
-		this.applySettings = function(settings) { 
-			constant = settings.getConstant();
-			factor = settings.getGlynnFactor();
 		};
 	};
 	
